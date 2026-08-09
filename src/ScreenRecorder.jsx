@@ -14,19 +14,21 @@ const ScreenRecorder = () => {
   const audioChunksRef = useRef([]);
   const recognitionRef = useRef(null);
   const finalTranscriptRef = useRef('');
-  const [timeLeft, setTimeLeft] = useState(45 * 60);
+  const [elapsedTime, setElapsedTime] = useState(0);
 
   useEffect(() => {
     let timer;
-    if (isRecording && timeLeft > 0) {
-      timer = setInterval(() => {
-        setTimeLeft((prev) => prev - 1);
-      }, 1000);
-    } else if (timeLeft === 0 && isRecording) {
-      stopRecording(); // Automatically stop recording at 45 mins
+    if (isRecording) {
+      if (elapsedTime >= 45 * 60) {
+        stopRecording(); // Automatically stop recording at 45 mins
+      } else {
+        timer = setInterval(() => {
+          setElapsedTime((prev) => prev + 1);
+        }, 1000);
+      }
     }
     return () => clearInterval(timer);
-  }, [isRecording, timeLeft]);
+  }, [isRecording, elapsedTime]);
 
   const startRecording = async () => {
     try {
@@ -141,7 +143,7 @@ const ScreenRecorder = () => {
       mediaRecorderRef.current.start();
       audioRecorderRef.current.start();
       setIsRecording(true);
-      setTimeLeft(45 * 60);
+      setElapsedTime(0);
       setVideoURL(null); // clear previous
       setTranscript(''); // reset transcript
       finalTranscriptRef.current = ''; // reset final transcript
@@ -272,7 +274,7 @@ const ScreenRecorder = () => {
           <div style={{ width: '12px', height: '12px', background: '#ef4444', borderRadius: '50%' }}></div>
           Recording in progress...
           <span style={{ background: '#7f1d1d', color: '#fff', padding: '4px 10px', borderRadius: '8px', fontFamily: 'monospace' }}>
-            {Math.floor(timeLeft / 60)}:{String(timeLeft % 60).padStart(2, '0')}
+            {Math.floor(elapsedTime / 60)}:{String(elapsedTime % 60).padStart(2, '0')}
           </span>
         </div>
       )}
