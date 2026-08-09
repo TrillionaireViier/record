@@ -39,7 +39,7 @@ const ScreenRecorder = () => {
     if (isRecording && openAiKey) {
       summaryInterval = setInterval(async () => {
         const currentText = currentTranscriptRef.current;
-        if (currentText.length > lastSummarizedLength.current + 25) {
+        if (currentText.length > lastSummarizedLength.current + 10) {
           try {
             lastSummarizedLength.current = currentText.length;
             const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
@@ -72,7 +72,7 @@ const ScreenRecorder = () => {
             console.error("Live summary error", e);
           }
         }
-      }, 15000); // 15 seconds
+      }, 5000); // 5 seconds for instant updates
     }
     return () => clearInterval(summaryInterval);
   }, [isRecording, openAiKey]);
