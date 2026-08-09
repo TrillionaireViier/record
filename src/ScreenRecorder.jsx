@@ -53,7 +53,7 @@ const ScreenRecorder = () => {
                 messages: [
                   {
                     role: 'system',
-                    content: 'Provide a very short, real-time live summary (max 3 bullet points) of the meeting transcript so far. Be extremely concise and use the same language as the transcript.'
+                    content: 'You are an AI meeting advisor. Provide a comprehensive summary and actionable advices/action items for the meeting transcript so far. Format with clear headings and bullet points. Use the same language as the transcript.'
                   },
                   {
                     role: 'user',
@@ -412,7 +412,7 @@ const ScreenRecorder = () => {
               <div style={{ padding: '15px', background: 'rgba(168, 85, 247, 0.15)', borderRadius: '12px', marginBottom: '15px', border: '1px solid #a855f7', color: '#e9d5ff', fontSize: '1rem', lineHeight: '1.5' }}>
                 <strong style={{ color: '#d8b4fe', display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
                   <div style={{ width: '8px', height: '8px', background: '#d8b4fe', borderRadius: '50%', animation: 'pulse 1.5s infinite' }}></div>
-                  ⚡ Live AI Insights:
+                  ⚡ Live AI Summary & Advices:
                 </strong>
                 <div>{liveSummary || <span style={{ color: '#a855f7', fontStyle: 'italic' }}>Listening... Waiting for you to speak to generate live summary.</span>}</div>
               </div>
