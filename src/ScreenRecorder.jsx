@@ -8,6 +8,7 @@ const ScreenRecorder = () => {
   const [language, setLanguage] = useState('uk-UA');
   const [openAiKey, setOpenAiKey] = useState(localStorage.getItem('groq_key') || '');
   const [isTranscribing, setIsTranscribing] = useState(false);
+  const [isSummarizing, setIsSummarizing] = useState(false);
   const mediaRecorderRef = useRef(null);
   const audioRecorderRef = useRef(null);
   const chunksRef = useRef([]);
@@ -191,6 +192,56 @@ const ScreenRecorder = () => {
     }
   };
 
+  const generateSummary = async () => {
+    if (!openAiKey) {
+      alert("Please enter your Groq API Key to use the AI Summary feature.");
+      return;
+    }
+    if (!transcript) {
+      alert("No transcript available to summarize.");
+      return;
+    }
+    
+    setIsSummarizing(true);
+    try {
+      const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${openAiKey}`
+        },
+        body: JSON.stringify({
+          model: 'llama-3.1-70b-versatile',
+          messages: [
+            {
+              role: 'system',
+              content: 'You are an AI meeting advisor. Given the following transcript, provide a concise summary and actionable advice/action items. Format with clear headings, bullet points, and use the same language as the transcript.'
+            },
+            {
+              role: 'user',
+              content: `Transcript:\n${transcript}`
+            }
+          ]
+        })
+      });
+      
+      if (!response.ok) {
+        const errData = await response.json();
+        throw new Error(errData.error?.message || 'Chat API Error');
+      }
+      
+      const data = await response.json();
+      const aiSummary = data.choices[0].message.content;
+      
+      setPersonalNotes(prev => prev + (prev ? `\n\n` : '') + `=== ✨ AI Summary & Advices ===\n${aiSummary}\n`);
+    } catch (error) {
+      console.error('Summary generation failed:', error);
+      alert(`AI Summary failed: ${error.message}`);
+    } finally {
+      setIsSummarizing(false);
+    }
+  };
+
   const downloadVideo = () => {
     if (!videoURL) return;
     const a = document.createElement('a');
@@ -328,6 +379,14 @@ const ScreenRecorder = () => {
               onClick={downloadVideo}
             >
               ⬇ Video (.webm)
+            </button>
+            <button 
+              className="btn-primary" 
+              style={{ padding: '12px 24px', fontSize: '1.1rem', flex: 1, background: '#a855f7' }}
+              onClick={generateSummary}
+              disabled={!transcript || isSummarizing}
+            >
+              {isSummarizing ? '⏳ Generating...' : '✨ AI Summary & Advices'}
             </button>
             <button 
               className="btn-primary" 
