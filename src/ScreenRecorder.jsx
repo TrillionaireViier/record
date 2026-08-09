@@ -19,6 +19,7 @@ const ScreenRecorder = () => {
   const lastSummarizedLength = useRef(0);
   const [elapsedTime, setElapsedTime] = useState(0);
   const [liveSummary, setLiveSummary] = useState('');
+  const [finalAiSummary, setFinalAiSummary] = useState('');
 
   useEffect(() => {
     let timer;
@@ -198,6 +199,7 @@ const ScreenRecorder = () => {
       setVideoURL(null); // clear previous
       setTranscript(''); // reset transcript
       setLiveSummary(''); // reset live summary
+      setFinalAiSummary(''); // reset final AI summary
       finalTranscriptRef.current = ''; // reset final transcript
       currentTranscriptRef.current = '';
       lastSummarizedLength.current = 0;
@@ -288,7 +290,7 @@ const ScreenRecorder = () => {
       const data = await response.json();
       const aiSummary = data.choices[0].message.content;
       
-      setPersonalNotes(prev => prev + (prev ? `\n\n` : '') + `=== ✨ AI Summary & Advices ===\n${aiSummary}\n`);
+      setFinalAiSummary(aiSummary);
     } catch (error) {
       console.error('Summary generation failed:', error);
       alert(`AI Summary failed: ${error.message}`);
@@ -403,20 +405,37 @@ const ScreenRecorder = () => {
             </div>
           </div>
 
+          {/* Middle Column: AI Summary & Advices */}
+          <div style={{ flex: 1, background: 'rgba(168, 85, 247, 0.1)', border: '1px solid #a855f7', padding: '20px', borderRadius: '12px', textAlign: 'left', display: 'flex', flexDirection: 'column' }}>
+            <h3 style={{ marginBottom: '15px', color: '#a855f7', display: 'flex', alignItems: 'center', gap: '10px' }}>
+              ✨ AI Summary & Advices
+            </h3>
+            <div style={{ flex: 1, minHeight: '300px', maxHeight: '500px', overflowY: 'auto', color: '#fff', fontSize: '1.1rem', lineHeight: '1.6' }}>
+              {isRecording && openAiKey && (
+                <div style={{ padding: '15px', background: 'rgba(168, 85, 247, 0.15)', borderRadius: '12px', border: '1px solid #a855f7', color: '#e9d5ff', fontSize: '1rem', lineHeight: '1.5' }}>
+                  <strong style={{ color: '#d8b4fe', display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
+                    <div style={{ width: '8px', height: '8px', background: '#d8b4fe', borderRadius: '50%', animation: 'pulse 1.5s infinite' }}></div>
+                    Live AI Insights:
+                  </strong>
+                  <div>{liveSummary || <span style={{ color: '#a855f7', fontStyle: 'italic' }}>Listening... Waiting for you to speak to generate live summary.</span>}</div>
+                </div>
+              )}
+              {!isRecording && finalAiSummary && (
+                <div style={{ color: '#e9d5ff', whiteSpace: 'pre-wrap' }}>
+                  {finalAiSummary}
+                </div>
+              )}
+              {!isRecording && !finalAiSummary && (
+                <span style={{ color: '#94a3b8' }}>AI Summary will appear here after recording...</span>
+              )}
+            </div>
+          </div>
+
           {/* Right Column: Personal Notes */}
           <div style={{ flex: 1, background: 'rgba(16, 185, 129, 0.1)', border: '1px solid #10b981', padding: '20px', borderRadius: '12px', textAlign: 'left', display: 'flex', flexDirection: 'column' }}>
             <h3 style={{ marginBottom: '15px', color: '#10b981', display: 'flex', alignItems: 'center', gap: '10px' }}>
               📝 My Action Items & Notes
             </h3>
-            {isRecording && openAiKey && (
-              <div style={{ padding: '15px', background: 'rgba(168, 85, 247, 0.15)', borderRadius: '12px', marginBottom: '15px', border: '1px solid #a855f7', color: '#e9d5ff', fontSize: '1rem', lineHeight: '1.5' }}>
-                <strong style={{ color: '#d8b4fe', display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
-                  <div style={{ width: '8px', height: '8px', background: '#d8b4fe', borderRadius: '50%', animation: 'pulse 1.5s infinite' }}></div>
-                  ⚡ Live AI Summary & Advices:
-                </strong>
-                <div>{liveSummary || <span style={{ color: '#a855f7', fontStyle: 'italic' }}>Listening... Waiting for you to speak to generate live summary.</span>}</div>
-              </div>
-            )}
             <textarea 
               value={personalNotes}
               onChange={(e) => setPersonalNotes(e.target.value)}
