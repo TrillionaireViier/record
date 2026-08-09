@@ -170,7 +170,11 @@ const ScreenRecorder = () => {
             
             const data = await response.json();
             // Prepend Whisper results over the browser's live results
-            setTranscript(`[Groq Whisper Transcript (Auto-detected)]\n\n${data.text}`);
+            const finalWhisperText = `[Groq Whisper Transcript (Auto-detected)]\n\n${data.text}`;
+            setTranscript(finalWhisperText);
+            
+            // Automatically generate AI Summary and Advice after Whisper finishes
+            generateSummary(finalWhisperText);
           } catch (error) {
             console.error('Whisper Transcription failed:', error);
             alert(`Groq Whisper failed: ${error.message}`);
@@ -243,12 +247,12 @@ const ScreenRecorder = () => {
     }
   };
 
-  const generateSummary = async () => {
+  const generateSummary = async (textToSummarize = transcript) => {
     if (!openAiKey) {
       alert("Please enter your Groq API Key to use the AI Summary feature.");
       return;
     }
-    if (!transcript) {
+    if (!textToSummarize) {
       alert("No transcript available to summarize.");
       return;
     }
@@ -270,7 +274,7 @@ const ScreenRecorder = () => {
             },
             {
               role: 'user',
-              content: `Transcript:\n${transcript}`
+              content: `Transcript:\n${textToSummarize}`
             }
           ]
         })
