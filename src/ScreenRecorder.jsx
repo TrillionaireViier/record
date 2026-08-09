@@ -6,7 +6,7 @@ const ScreenRecorder = () => {
   const [transcript, setTranscript] = useState('');
   const [personalNotes, setPersonalNotes] = useState('');
   const [language, setLanguage] = useState('uk-UA');
-  const [openAiKey, setOpenAiKey] = useState(localStorage.getItem('openai_key') || '');
+  const [openAiKey, setOpenAiKey] = useState(localStorage.getItem('groq_key') || '');
   const [isTranscribing, setIsTranscribing] = useState(false);
   const mediaRecorderRef = useRef(null);
   const audioRecorderRef = useRef(null);
@@ -91,9 +91,9 @@ const ScreenRecorder = () => {
           try {
             const formData = new FormData();
             formData.append('file', audioBlob, 'audio.webm');
-            formData.append('model', 'whisper-1');
+            formData.append('model', 'whisper-large-v3-turbo');
             
-            const response = await fetch('https://api.openai.com/v1/audio/transcriptions', {
+            const response = await fetch('https://api.groq.com/openai/v1/audio/transcriptions', {
               method: 'POST',
               headers: {
                 'Authorization': `Bearer ${openAiKey}`
@@ -108,10 +108,10 @@ const ScreenRecorder = () => {
             
             const data = await response.json();
             // Prepend Whisper results over the browser's live results
-            setTranscript(`[OpenAI Whisper Transcript (Auto-detected)]\n\n${data.text}`);
+            setTranscript(`[Groq Whisper Transcript (Auto-detected)]\n\n${data.text}`);
           } catch (error) {
             console.error('Whisper Transcription failed:', error);
-            alert(`OpenAI Whisper failed: ${error.message}`);
+            alert(`Groq Whisper failed: ${error.message}`);
           } finally {
             setIsTranscribing(false);
           }
@@ -217,14 +217,14 @@ const ScreenRecorder = () => {
           <option value="ru-RU">🇷🇺 Русский</option>
         </select>
         
-        <span style={{ color: '#fff', fontWeight: 'bold', marginLeft: '20px' }}>OpenAI Key (For Auto-Detect Whisper):</span>
+        <span style={{ color: '#fff', fontWeight: 'bold', marginLeft: '20px' }}>Groq API Key (Free Auto-Detect):</span>
         <input 
           type="password" 
-          placeholder="sk-..."
+          placeholder="gsk_..."
           value={openAiKey}
           onChange={(e) => {
             setOpenAiKey(e.target.value);
-            localStorage.setItem('openai_key', e.target.value);
+            localStorage.setItem('groq_key', e.target.value);
           }}
           style={{ padding: '8px 16px', borderRadius: '8px', background: '#1e293b', color: '#fff', border: '1px solid #475569', outline: 'none', width: '250px' }}
         />
@@ -268,7 +268,7 @@ const ScreenRecorder = () => {
             <div style={{ flex: 1, minHeight: '300px', maxHeight: '500px', overflowY: 'auto', color: '#fff', fontSize: '1.1rem', lineHeight: '1.6' }}>
               {isTranscribing && (
                 <div style={{ color: '#34d399', fontWeight: 'bold', marginBottom: '10px', animation: 'pulse 1.5s infinite' }}>
-                  ⏳ OpenAI Whisper is analyzing and perfecting the transcript...
+                  ⏳ Groq Whisper is analyzing and perfecting the transcript at lightning speed...
                 </div>
               )}
               {transcript || <span style={{ color: '#94a3b8' }}>Waiting for speech (Make sure you allow Microphone access)...</span>}
