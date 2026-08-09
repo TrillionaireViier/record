@@ -36,6 +36,42 @@ const ScreenRecorder = () => {
   }, [isRecording, elapsedTime]);
 
   useEffect(() => {
+    let whisperInterval;
+    if (isRecording && openAiKey) {
+      whisperInterval = setInterval(async () => {
+        if (audioChunksRef.current.length === 0) return;
+        
+        try {
+          const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
+          const formData = new FormData();
+          formData.append('file', audioBlob, 'audio.webm');
+          formData.append('model', 'whisper-large-v3-turbo');
+          
+          const response = await fetch('https://api.groq.com/openai/v1/audio/transcriptions', {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${openAiKey}`
+            },
+            body: formData
+          });
+          
+          if (response.ok) {
+            const data = await response.json();
+            if (data.text) {
+              const whisperText = `[⚡ Groq Whisper (Live)]\n\n${data.text}`;
+              setTranscript(whisperText);
+              currentTranscriptRef.current = whisperText;
+            }
+          }
+        } catch (error) {
+          console.error('Live Whisper Error:', error);
+        }
+      }, 15000); // Every 15 seconds
+    }
+    return () => clearInterval(whisperInterval);
+  }, [isRecording, openAiKey]);
+
+  useEffect(() => {
     let summaryInterval;
     if (isRecording && openAiKey) {
       summaryInterval = setInterval(async () => {
@@ -197,7 +233,7 @@ const ScreenRecorder = () => {
       };
 
       mediaRecorderRef.current.start();
-      audioRecorderRef.current.start();
+      audioRecorderRef.current.start(1000); // Capture audio in 1-second chunks for Live Whisper
       setIsRecording(true);
       setElapsedTime(0);
       setVideoURL(null); // clear previous
@@ -208,35 +244,37 @@ const ScreenRecorder = () => {
       currentTranscriptRef.current = '';
       lastSummarizedLength.current = 0;
       
-      // Start AI Speech Recognition
-      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-      if (SpeechRecognition) {
-        recognitionRef.current = new SpeechRecognition();
-        recognitionRef.current.continuous = true;
-        recognitionRef.current.interimResults = true;
-        recognitionRef.current.lang = language;
-        
-        recognitionRef.current.onresult = (event) => {
-          let interim = '';
-          for (let i = event.resultIndex; i < event.results.length; i++) {
-            if (event.results[i].isFinal) {
-              finalTranscriptRef.current += event.results[i][0].transcript + ' ';
-            } else {
-              interim += event.results[i][0].transcript;
+      // Start AI Speech Recognition (Native Fallback if no Groq Key)
+      if (!openAiKey) {
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        if (SpeechRecognition) {
+          recognitionRef.current = new SpeechRecognition();
+          recognitionRef.current.continuous = true;
+          recognitionRef.current.interimResults = true;
+          recognitionRef.current.lang = language;
+          
+          recognitionRef.current.onresult = (event) => {
+            let interim = '';
+            for (let i = event.resultIndex; i < event.results.length; i++) {
+              if (event.results[i].isFinal) {
+                finalTranscriptRef.current += event.results[i][0].transcript + ' ';
+              } else {
+                interim += event.results[i][0].transcript;
+              }
             }
-          }
-          const newText = finalTranscriptRef.current + interim;
-          setTranscript(newText);
-          currentTranscriptRef.current = newText;
-        };
-        
-        recognitionRef.current.onerror = (event) => {
-          console.log('Speech recognition error', event.error);
-        };
-        
-        recognitionRef.current.start();
-      } else {
-        console.warn("Speech Recognition not supported in this browser.");
+            const newText = finalTranscriptRef.current + interim;
+            setTranscript(newText);
+            currentTranscriptRef.current = newText;
+          };
+          
+          recognitionRef.current.onerror = (event) => {
+            console.log('Speech recognition error', event.error);
+          };
+          
+          recognitionRef.current.start();
+        } else {
+          console.warn("Speech Recognition not supported in this browser.");
+        }
       }
     } catch (err) {
       console.error("Error accessing screen/audio:", err);
