@@ -39,7 +39,7 @@ const ScreenRecorder = () => {
     if (isRecording && openAiKey) {
       summaryInterval = setInterval(async () => {
         const currentText = currentTranscriptRef.current;
-        if (currentText.length > lastSummarizedLength.current + 50) {
+        if (currentText.length > lastSummarizedLength.current + 25) {
           try {
             lastSummarizedLength.current = currentText.length;
             const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
@@ -72,7 +72,7 @@ const ScreenRecorder = () => {
             console.error("Live summary error", e);
           }
         }
-      }, 30000); // 30 seconds
+      }, 15000); // 15 seconds
     }
     return () => clearInterval(summaryInterval);
   }, [isRecording, openAiKey]);
@@ -404,13 +404,13 @@ const ScreenRecorder = () => {
             <h3 style={{ marginBottom: '15px', color: '#10b981', display: 'flex', alignItems: 'center', gap: '10px' }}>
               📝 My Action Items & Notes
             </h3>
-            {isRecording && liveSummary && (
+            {isRecording && openAiKey && (
               <div style={{ padding: '15px', background: 'rgba(168, 85, 247, 0.15)', borderRadius: '12px', marginBottom: '15px', border: '1px solid #a855f7', color: '#e9d5ff', fontSize: '1rem', lineHeight: '1.5' }}>
                 <strong style={{ color: '#d8b4fe', display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
                   <div style={{ width: '8px', height: '8px', background: '#d8b4fe', borderRadius: '50%', animation: 'pulse 1.5s infinite' }}></div>
                   ⚡ Live AI Insights:
                 </strong>
-                <div>{liveSummary}</div>
+                <div>{liveSummary || <span style={{ color: '#a855f7', fontStyle: 'italic' }}>Listening... Waiting for you to speak to generate live summary.</span>}</div>
               </div>
             )}
             <textarea 
