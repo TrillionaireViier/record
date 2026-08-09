@@ -58,7 +58,7 @@ const ScreenRecorder = () => {
                   },
                   {
                     role: 'user',
-                    content: currentText
+                    content: `Transcript:\n${currentText}`
                   }
                 ]
               })
@@ -68,12 +68,16 @@ const ScreenRecorder = () => {
               if (data.choices && data.choices.length > 0) {
                 setLiveSummary(data.choices[0].message.content);
               }
+            } else {
+              const err = await response.json();
+              setLiveSummary(`❌ API Error: ${err.error?.message || response.statusText}`);
             }
           } catch (e) {
             console.error("Live summary error", e);
+            setLiveSummary(`❌ Connection Error: ${e.message}`);
           }
         }
-      }, 2500); // 2.5 seconds for instant updates
+      }, 7000); // 7 seconds to avoid rate limits
     }
     return () => clearInterval(summaryInterval);
   }, [isRecording, openAiKey]);
