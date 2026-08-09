@@ -218,16 +218,19 @@ const ScreenRecorder = () => {
         </select>
         
         <span style={{ color: '#fff', fontWeight: 'bold', marginLeft: '20px' }}>Groq API Key (Free Auto-Detect):</span>
-        <input 
-          type="password" 
-          placeholder="gsk_..."
-          value={openAiKey}
-          onChange={(e) => {
-            setOpenAiKey(e.target.value);
-            localStorage.setItem('groq_key', e.target.value);
-          }}
-          style={{ padding: '8px 16px', borderRadius: '8px', background: '#1e293b', color: '#fff', border: '1px solid #475569', outline: 'none', width: '250px' }}
-        />
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
+          <input 
+            type="password" 
+            placeholder="gsk_..."
+            value={openAiKey}
+            onChange={(e) => {
+              setOpenAiKey(e.target.value);
+              localStorage.setItem('groq_key', e.target.value);
+            }}
+            style={{ padding: '8px 16px', borderRadius: '8px', background: '#1e293b', color: '#fff', border: '1px solid #475569', outline: 'none', width: '250px' }}
+          />
+          <span style={{ color: '#94a3b8', fontSize: '0.8rem', textAlign: 'left' }}>⚠️ Limit: ~45-60 mins per recording (25MB)</span>
+        </div>
       </div>
 
       <div style={{ display: 'flex', gap: '20px', marginBottom: '40px' }}>
