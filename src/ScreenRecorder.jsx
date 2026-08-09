@@ -15,7 +15,10 @@ const ScreenRecorder = () => {
   const audioChunksRef = useRef([]);
   const recognitionRef = useRef(null);
   const finalTranscriptRef = useRef('');
+  const currentTranscriptRef = useRef('');
+  const lastSummarizedLength = useRef(0);
   const [elapsedTime, setElapsedTime] = useState(0);
+  const [liveSummary, setLiveSummary] = useState('');
 
   useEffect(() => {
     let timer;
@@ -30,6 +33,49 @@ const ScreenRecorder = () => {
     }
     return () => clearInterval(timer);
   }, [isRecording, elapsedTime]);
+
+  useEffect(() => {
+    let summaryInterval;
+    if (isRecording && openAiKey) {
+      summaryInterval = setInterval(async () => {
+        const currentText = currentTranscriptRef.current;
+        if (currentText.length > lastSummarizedLength.current + 50) {
+          try {
+            lastSummarizedLength.current = currentText.length;
+            const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${openAiKey}`
+              },
+              body: JSON.stringify({
+                model: 'llama-3.1-70b-versatile',
+                messages: [
+                  {
+                    role: 'system',
+                    content: 'Provide a very short, real-time live summary (max 3 bullet points) of the meeting transcript so far. Be extremely concise and use the same language as the transcript.'
+                  },
+                  {
+                    role: 'user',
+                    content: currentText
+                  }
+                ]
+              })
+            });
+            if (response.ok) {
+              const data = await response.json();
+              if (data.choices && data.choices.length > 0) {
+                setLiveSummary(data.choices[0].message.content);
+              }
+            }
+          } catch (e) {
+            console.error("Live summary error", e);
+          }
+        }
+      }, 30000); // 30 seconds
+    }
+    return () => clearInterval(summaryInterval);
+  }, [isRecording, openAiKey]);
 
   const startRecording = async () => {
     try {
@@ -147,7 +193,10 @@ const ScreenRecorder = () => {
       setElapsedTime(0);
       setVideoURL(null); // clear previous
       setTranscript(''); // reset transcript
+      setLiveSummary(''); // reset live summary
       finalTranscriptRef.current = ''; // reset final transcript
+      currentTranscriptRef.current = '';
+      lastSummarizedLength.current = 0;
       
       // Start AI Speech Recognition
       const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -166,7 +215,9 @@ const ScreenRecorder = () => {
               interim += event.results[i][0].transcript;
             }
           }
-          setTranscript(finalTranscriptRef.current + interim);
+          const newText = finalTranscriptRef.current + interim;
+          setTranscript(newText);
+          currentTranscriptRef.current = newText;
         };
         
         recognitionRef.current.onerror = (event) => {
@@ -353,6 +404,15 @@ const ScreenRecorder = () => {
             <h3 style={{ marginBottom: '15px', color: '#10b981', display: 'flex', alignItems: 'center', gap: '10px' }}>
               📝 My Action Items & Notes
             </h3>
+            {isRecording && liveSummary && (
+              <div style={{ padding: '15px', background: 'rgba(168, 85, 247, 0.15)', borderRadius: '12px', marginBottom: '15px', border: '1px solid #a855f7', color: '#e9d5ff', fontSize: '1rem', lineHeight: '1.5' }}>
+                <strong style={{ color: '#d8b4fe', display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
+                  <div style={{ width: '8px', height: '8px', background: '#d8b4fe', borderRadius: '50%', animation: 'pulse 1.5s infinite' }}></div>
+                  ⚡ Live AI Insights:
+                </strong>
+                <div>{liveSummary}</div>
+              </div>
+            )}
             <textarea 
               value={personalNotes}
               onChange={(e) => setPersonalNotes(e.target.value)}
