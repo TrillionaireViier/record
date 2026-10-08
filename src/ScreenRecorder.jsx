@@ -5,7 +5,7 @@ const ScreenRecorder = () => {
   const [videoURL, setVideoURL] = useState(null);
   const [transcript, setTranscript] = useState('');
   const [personalNotes, setPersonalNotes] = useState('');
-  const [language, setLanguage] = useState('uk-UA');
+  const [language, setLanguage] = useState('auto');
   const [openAiKey, setOpenAiKey] = useState(localStorage.getItem('groq_key') || '');
   const [isTranscribing, setIsTranscribing] = useState(false);
   const [isSummarizing, setIsSummarizing] = useState(false);
@@ -51,6 +51,9 @@ const ScreenRecorder = () => {
           const formData = new FormData();
           formData.append('file', audioBlob, 'audio.webm');
           formData.append('model', 'whisper-large-v3-turbo');
+          if (language !== 'auto') {
+            formData.append('language', language.split('-')[0]);
+          }
 
           const response = await fetch('https://api.groq.com/openai/v1/audio/transcriptions', {
             method: 'POST',
@@ -250,7 +253,7 @@ const ScreenRecorder = () => {
           recognitionRef.current = new SpeechRecognition();
           recognitionRef.current.continuous = true;
           recognitionRef.current.interimResults = true;
-          recognitionRef.current.lang = language;
+          recognitionRef.current.lang = language === 'auto' ? (navigator.language || 'en-US') : language;
 
           recognitionRef.current.onresult = (event) => {
             let interim = '';
@@ -384,6 +387,7 @@ const ScreenRecorder = () => {
           disabled={isRecording}
           style={{ padding: '8px 16px', borderRadius: '8px', background: '#1e293b', color: '#fff', border: '1px solid #475569', outline: 'none' }}
         >
+          <option value="auto">🌍 Auto-Detect (Сам поймёт)</option>
           <option value="uk-UA">🇺🇦 Українська</option>
           <option value="en-US">🇬🇧 English</option>
           <option value="ru-RU">🇷🇺 Русский</option>
