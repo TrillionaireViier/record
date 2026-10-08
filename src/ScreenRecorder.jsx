@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import ysFixWebmDuration from 'fix-webm-duration';
 
 const ScreenRecorder = () => {
   const [isRecording, setIsRecording] = useState(false);
@@ -16,6 +17,7 @@ const ScreenRecorder = () => {
   const recognitionRef = useRef(null);
   const finalTranscriptRef = useRef('');
   const currentTranscriptRef = useRef('');
+  const startTimeRef = useRef(null);
   const lastSummarizedLength = useRef(0);
   const [elapsedTime, setElapsedTime] = useState(0);
   const timerRef = useRef(null);
@@ -170,9 +172,14 @@ const ScreenRecorder = () => {
       };
 
       mediaRecorderRef.current.onstop = () => {
+        const duration = Date.now() - startTimeRef.current;
         const blob = new Blob(chunksRef.current, { type: 'video/webm' });
-        const url = URL.createObjectURL(blob);
-        setVideoURL(url);
+        
+        ysFixWebmDuration(blob, duration, (fixedBlob) => {
+          const url = URL.createObjectURL(fixedBlob);
+          setVideoURL(url);
+        });
+        
         chunksRef.current = [];
 
         combinedStream.getTracks().forEach(t => t.stop());
@@ -237,6 +244,7 @@ const ScreenRecorder = () => {
       // timeslice=10s keeps video chunks small; audio at 1-s for live Whisper
       mediaRecorderRef.current.start(10000);
       audioRecorderRef.current.start(1000);
+      startTimeRef.current = Date.now();
       setIsRecording(true);
       setElapsedTime(0);
       setVideoURL(null);
